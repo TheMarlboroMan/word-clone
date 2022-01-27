@@ -1,5 +1,6 @@
-#include <iostream>
+#include "include/runtime_config.h"
 #include "../terminal-tools/src/terminal_out.h"
+#include <iostream>
 #include <string>
 #include <fstream>
 #include <vector>
@@ -49,6 +50,9 @@ int main(int argc, char ** argv) {
 	std::vector<std::string> words;
 
 	//load words
+	//TODO: be able to switch on and off strict mode.
+	//TODO: be able to run with --help
+	//TODO: be able to run with --dictionary 
 	switch(argc) {
 
 		case 1: read_words("words", words); break;
