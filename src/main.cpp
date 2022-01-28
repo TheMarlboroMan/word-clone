@@ -1,5 +1,6 @@
-#include "include/runtime_config.h"
-#include "../terminal-tools/src/terminal_out.h"
+#include "wordle_clone/runtime_config.h"
+#include <tools/arg_manager.h>
+#include <tools/terminal_out.h>
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -9,10 +10,11 @@
 #include <stdexcept>
 
 /**
- *reads words from filename into target, skips any non-five letter words. Words
- *are expected to be recorded one per line with no whitespace. Throws if the
- *file cannot be opened.
- */
+*reads words from filename into target, skips any non-five letter words. Words
+*are expected to be recorded one per line with no whitespace. Throws if the
+*file cannot be opened.
+*/
+
 void read_words(
 	const std::string _filename,
 	std::vector<std::string>& _target
@@ -43,25 +45,26 @@ void read_words(
 	std::cout<<"read "<<_target.size()<<" words from "<<_filename<<"..."<<std::endl;
 }
 
+wordle_clone::runtime_config get_config(const tools::arg_manager&);
+
 int main(int argc, char ** argv) {
 
 	using namespace tools;
 
-	std::vector<std::string> words;
-
-	//load words
-	//TODO: be able to switch on and off strict mode.
-	//TODO: be able to run with --help
-	//TODO: be able to run with --dictionary 
-	switch(argc) {
-
-		case 1: read_words("words", words); break;
-		case 2: read_words(argv[1], words); break;
-		default:
-			std::cout<<"use with no arguments for default dictionary, with a single argument for a custom one"<<std::endl;
-			return 1;
-	}
+	tools::arg_manager argman{argc, argv};
 	
+	std::vector<std::string> words;
+	wordle_clone::runtime_config rc=get_config(argman);
+
+	//load words  
+	for(const auto& filename : rc.get_dictionaries()) {
+
+		read_words(filename, words);
+	}
+
+	//TODO: be able to run with --help
+	
+	//TODO: make the dictionary unique
 	//abort if no words are loaded!
 	if(!words.size()) {
 
@@ -76,7 +79,6 @@ int main(int argc, char ** argv) {
 	//start game
 	int tries=0;
 	//TODO: specify at command line
-	bool strict=false;
 
 	try {
 	//TODO: keep a vector of used letters
@@ -93,7 +95,7 @@ int main(int argc, char ** argv) {
 			continue;
 		}
 	
-		if(strict && std::end(words)==std::find(std::begin(words), std::end(words), input)) {
+		if(rc.is_strict() && std::end(words)==std::find(std::begin(words), std::end(words), input)) {
 
 			std::cout<<s::text_color(tools::txt_red)<<input<<" is not a word"<<s::reset_text()<<std::endl;
 			continue;
@@ -160,4 +162,37 @@ int main(int argc, char ** argv) {
 	return 0;
 }
 
+wordle_clone::runtime_config get_config(
+	const tools::arg_manager& _argman
+) {
+	wordle_clone::runtime_config result;
 
+	std::size_t nextarg{0};
+	for(const auto& arg : _argman.get_data()) {
+
+		++nextarg;
+
+		if(arg=="--nostrict") {
+
+			result.set_strict(false);
+			continue;
+		}
+
+		if(arg=="--dictionary") {
+
+			if(nextarg < _argman.size()) {
+
+				result.add_dictionary_file(_argman.get_argument(nextarg));
+			}
+			continue;
+		}
+	}
+	
+	//last resort, use basic words...
+	if(!result.get_dictionaries().size()) {
+
+		result.add_dictionary_file("../words"); //TODO: use env class
+	}
+
+	return result;
+}
