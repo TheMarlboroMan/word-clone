@@ -2,3 +2,5 @@
 .git
 *~
 *.out
+*.swp
+build

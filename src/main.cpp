@@ -9,42 +9,8 @@
 #include <algorithm>
 #include <stdexcept>
 
-/**
-*reads words from filename into target, skips any non-five letter words. Words
-*are expected to be recorded one per line with no whitespace. Throws if the
-*file cannot be opened.
-*/
-
-void read_words(
-	const std::string _filename,
-	std::vector<std::string>& _target
-) {
-
-	std::ifstream infile{_filename, std::ifstream::in};
-	if(!infile) {
-
-		throw std::runtime_error("could not open file");
-	}
-
-	std::string word;
-	while(true) {
-
-		std::getline(infile, word);
-		if(infile.eof()) {
-
-			break;
-		}
-
-		if(word.size() != 5) {
-			continue;
-		}
-		
-		_target.push_back(word);
-	}
-
-	std::cout<<"read "<<_target.size()<<" words from "<<_filename<<"..."<<std::endl;
-}
-
+void read_words(const std::string&, std::vector<std::string>&);
+void show_help();
 wordle_clone::runtime_config get_config(const tools::arg_manager&);
 
 int main(int argc, char ** argv) {
@@ -52,25 +18,35 @@ int main(int argc, char ** argv) {
 	using namespace tools;
 
 	tools::arg_manager argman{argc, argv};
-	
-	std::vector<std::string> words;
 	wordle_clone::runtime_config rc=get_config(argman);
 
-	//load words  
+	if(rc.is_show_help()) {
+
+		show_help();
+		return 0;
+	}
+	
+	std::vector<std::string> words;
+	//load words
 	for(const auto& filename : rc.get_dictionaries()) {
 
 		read_words(filename, words);
 	}
-
-	//TODO: be able to run with --help
 	
-	//TODO: make the dictionary unique
+		//TODO: be able to run with --help
+	
 	//abort if no words are loaded!
 	if(!words.size()) {
 
 		std::cerr<<"no words loaded, aborting"<<std::endl;
 		return 1;
 	}
+	
+	//remove duplicates
+	std::sort(std::begin(words), std::end(words));
+	auto it=std::unique(std::begin(words), std::end(words));
+	words.erase(it);
+	std::cout<<"final word count is "<<words.size()<<std::endl;
 
 	//choose a random one
 	srand(time(0));
@@ -178,6 +154,11 @@ wordle_clone::runtime_config get_config(
 			continue;
 		}
 
+		if(arg=="--help") {
+
+			result.set_show_help(true);
+		}
+
 		if(arg=="--dictionary") {
 
 			if(nextarg < _argman.size()) {
@@ -195,4 +176,40 @@ wordle_clone::runtime_config get_config(
 	}
 
 	return result;
+}
+
+void read_words(
+	const std::string& _filename,
+	std::vector<std::string>& _target
+) {
+
+	std::ifstream infile{_filename, std::ifstream::in};
+	if(!infile) {
+
+		throw std::runtime_error("could not open file");
+	}
+
+	std::string word;
+	while(true) {
+
+		std::getline(infile, word);
+		if(infile.eof()) {
+
+			break;
+		}
+
+		if(word.size() != 5) {
+			continue;
+		}
+		
+		_target.push_back(word);
+	}
+}
+
+void show_help() {
+
+	std::cout<<"--help: shows this help.\n"
+		"--nostrict: allows to use words outside the dictionary\n"
+		"--dictionary <file>: adds a dictionary file, can be used more than once\n"
+		<<std::endl;
 }
