@@ -7,7 +7,7 @@ class letter {
 
 	public:
 
-	enum class values {untyped, not_present, misplaced, match}r;
+	enum class values {untyped, not_present, misplaced, match};
 	                    letter(char _c);
 	char                get_character() const {return character;}
 	values              get_status() const {return status;}
@@ -23,15 +23,13 @@ class alphabet_status {
 
 	public:
 
-	                    alphabet_status();
-	void                reset();
-	//${CMAKE_CURRENT_SOURCE_DIR}/char_status.cpp
-	//TODO: do not mark as misplaced if we got a hit!
-	void                mark(char, letter::values);
-	letter::values      get(char) const;
+	                        alphabet_status();
+	void                    reset();
+	void                    mark(char, letter::values);
+	letter::values          get(char) const;
 
 	private:
 
-	std::vector<letter> status;
+	std::vector<letter>     status;
 };
 }

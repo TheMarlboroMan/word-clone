@@ -1,4 +1,5 @@
 #include "wordle_clone/runtime_config.h"
+#include "wordle_clone/char_status.h"
 #include <tools/arg_manager.h>
 #include <tools/terminal_out.h>
 #include <iostream>
@@ -54,16 +55,42 @@ int main(int argc, char ** argv) {
 
 	//start game
 	int tries=0;
-	//TODO: specify at command line
+	wordle_clone::alphabet_status as;
 
 	try {
 	//TODO: keep a vector of used letters
 	//TODO: separate this into functional chunks
 	while(true) {
 
+		for(char c='a'; c<='z'; c++) {
+
+			int bg=tools::bg_black, fg=tools::txt_white;
+
+			switch(as.get(c)) {
+
+				case wordle_clone::letter::values::untyped:
+					fg=tools::txt_black;
+					bg=tools::bg_white;
+				break;
+				case wordle_clone::letter::values::not_present:
+
+				break;
+				case wordle_clone::letter::values::misplaced:
+					fg=tools::txt_white;
+					bg=tools::bg_yellow;
+				break;
+				case wordle_clone::letter::values::match:
+					fg=tools::txt_white;
+					bg=tools::bg_green;
+				break;
+			}
+			
+			std::cout<<s::text_color(fg)<<s::background_color(bg)<<c<<s::reset_text();
+		}
+		
 		//get and validate input.
 		std::string input;
-		std::cout<<">>";
+		std::cout<<"\n>>";
 		std::getline(std::cin, input);
 		if(input.size() != 5) {
 
@@ -95,6 +122,7 @@ int main(int argc, char ** argv) {
 				copy.erase(copy.find(input[i]), 1);
 				bg=tools::bg_green;
 				++matches;
+				as.mark(input[i], wordle_clone::letter::values::match);
 			}
 			else {
 
@@ -105,6 +133,12 @@ int main(int argc, char ** argv) {
 					copy.erase(pos, 1);
 					bg=tools::bg_yellow;
 					fg=tools::txt_black;
+					//trust this class not to mark already matched ones...
+					as.mark(input[i], wordle_clone::letter::values::misplaced);
+				}
+				else {
+
+					as.mark(input[i], wordle_clone::letter::values::not_present);
 				}
 			}
 		
